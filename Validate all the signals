@@ -1,0 +1,228 @@
+##Step1: Validate all the signals added to the file ---
+import datetime
+import numpy as np
+import pandas as pd
+import mplfinance as mpf
+import plotly.graph_objects as go
+from IPython.display import display, clear_output
+import ipywidgets as widgets
+from ipywidgets import widgets
+from IPython.display import HTML
+import matplotlib.pyplot as plt
+from IPython.display import display, clear_output
+import ipywidgets as widgets
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+
+NO_DAYS = 30
+
+lst1 = ['Date',
+ 'open_price',
+ 'high_price',
+ 'low_price',
+ 'close_price',
+ 'vol',
+ 'script',
+ 'agg_x',
+ 'totalBuyQuantity',
+ 'totalSellQuantity','vol_orig',
+ 'candle_no','Date_daily','trend_levels',
+ 'trend_values',
+ 'Date_orig',
+ 'agg_y','Date_d']
+
+lst2 = [i for i in df.columns if i.find('indicator') >= 0]
+
+lst1.extend(lst2)
+vars_list = [i for i in df.columns if i not in lst1]
+vars_list.extend(['NONE'])
+vars_list.sort()
+#df= pd.read_csv('Working_files\\oscillators_intraday.csv')
+
+df['Date'] = pd.to_datetime(df['Date'])
+df['Date_d'] = pd.to_datetime(df['Date'].dt.date)
+
+
+
+date_picker = widgets.DatePicker(
+    description='Select Date:',
+    value=df['Date_d'].max()
+)
+
+script_dropdown = widgets.Dropdown(
+    description='Select script:',
+    options=df['script'].sort_values().unique().tolist(),
+    value="^NSEI"
+)
+
+var1_dropdown = widgets.Dropdown(
+    description='1_Select VARs:',
+    options= vars_list,
+    value=vars_list[10]
+)
+
+SEC_AXIS1 = widgets.Dropdown(
+    description='Secondary Axis for Var1: ',
+    options= [True,False],
+    value=True
+)
+
+
+var2_dropdown = widgets.Dropdown(
+    description='2_Select VARs:',
+    options= vars_list,
+    value="NONE"
+)
+
+SEC_AXIS2 = widgets.Dropdown(
+    description='Secondary Axis for Var2: ',
+    options= [True,False],
+    value=True
+)
+
+
+var3_dropdown = widgets.Dropdown(
+    description='3_Select VARs:',
+    options= vars_list,
+    value="NONE"
+)
+
+SEC_AXIS3 = widgets.Dropdown(
+    description='Secondary Axis for Var3: ',
+    options= [True,False],
+    value=True
+)
+
+
+var4_dropdown = widgets.Dropdown(
+    description='4_Select VARs:',
+    options= vars_list,
+    value="NONE"
+)
+SEC_AXIS4 = widgets.Dropdown(
+    description='Secondary Axis for Var4: ',
+    options= [True,False],
+    value=True
+)
+
+
+
+initial_data = df[(df['script'] == script_dropdown.value) & (df['Date_d'] == date_picker.value)].sort_values(['Date'])
+initial_data.rename(columns={'open_price': 'Open', 'high_price': 'High', 'low_price': 'Low', 'close_price': 'Close','vol':'Volume'}, inplace=True)
+initial_data['NONE'] = 0
+
+
+if NO_DAYS > 1:
+    df_1 = df.sort_values(['Date'], ascending= False)
+    df_1['Date_daily'] = pd.to_datetime(df_1.Date.dt.date)        
+    df_1 = df_1[df_1['Date_daily'] <= pd.to_datetime(date_picker.value)]
+    unique_dates = df_1.Date_daily.drop_duplicates()
+    Keep_dates = unique_dates[:NO_DAYS].to_list()
+    initial_data = df_1[(df_1['script'] == script_dropdown.value) & (df_1['Date_daily'].isin(Keep_dates))].sort_values(['Date'])
+
+else:
+    initial_data = df[(df['script'] == script_dropdown.value) & (df['Date_d'] == pd.to_datetime(date_picker.value))].sort_values(['Date'])
+
+
+initial_data.rename(columns={'open_price': 'Open', 'high_price': 'High', 'low_price': 'Low', 'close_price': 'Close','vol':'Volume'}, inplace=True)
+initial_data['NONE'] = 0
+
+
+
+plt.figure(figsize=(12, 8))
+
+apdict = mpf.make_addplot(initial_data[[var1_dropdown.value]],secondary_y = True)
+apdict1 = mpf.make_addplot(initial_data[[var2_dropdown.value]], secondary_y=True, color='green', linestyle='dashed')
+apdict2 = mpf.make_addplot(initial_data[[var3_dropdown.value]], secondary_y=True, color='red', linestyle='dotted')
+apdict3 = mpf.make_addplot(initial_data[[var4_dropdown.value]], secondary_y=True, color='blue', linestyle='solid')
+
+mpf.plot(initial_data.set_index('Date'), addplot= [apdict, apdict1, apdict2, apdict3],
+         type='candle',
+         style='charles',
+         title=f'Candlestick Chart for {script_dropdown.value}, Date: {date_picker.value}',
+         figsize=(12, 8) ,
+         volume=True,
+         ylabel_lower='Shares\nTraded')
+
+
+display(script_dropdown)
+display(date_picker)
+display(var1_dropdown)
+display(SEC_AXIS1)
+display(var2_dropdown)
+display(SEC_AXIS2)
+display(var3_dropdown)
+display(SEC_AXIS3)
+display(var4_dropdown)
+display(SEC_AXIS4)
+
+
+def on_change(change):
+    clear_output()
+    display(script_dropdown)
+    display(date_picker)
+    display(var1_dropdown)
+    display(SEC_AXIS1)
+    display(var2_dropdown)
+    display(SEC_AXIS2)
+    display(var3_dropdown)
+    display(SEC_AXIS3)
+    display(var4_dropdown)
+    display(SEC_AXIS4)
+    
+    #initial_data = df[(df['script'] == script_dropdown.value) & (df['Date_d'] <= pd.to_datetime(date_picker.value)) & (df['Date_d'] >= pd.to_datetime(date_picker.value)-timedelta(2))].drop_duplicates(['Date','script'])
+
+    if NO_DAYS > 1:
+        df_1 = df.sort_values(['Date'], ascending= False)
+        df_1['Date_daily'] = pd.to_datetime(df_1.Date.dt.date)        
+        df_1 = df_1[df_1['Date_daily'] <= pd.to_datetime(date_picker.value)]
+        unique_dates = df_1.Date_daily.drop_duplicates()
+        Keep_dates = unique_dates[:NO_DAYS].to_list()
+        initial_data = df_1[(df_1['script'] == script_dropdown.value) & (df_1['Date_daily'].isin(Keep_dates))].sort_values(['Date'])
+
+    else:
+        initial_data = df[(df['script'] == script_dropdown.value) & (df['Date_d'] == pd.to_datetime(date_picker.value))].sort_values(['Date'])
+
+    
+    initial_data.rename(columns={'open_price': 'Open', 'high_price': 'High', 'low_price': 'Low', 'close_price': 'Close','vol':'Volume'}, inplace=True)
+    initial_data['NONE'] = 0
+    plt.figure(figsize=(12, 8))
+    
+        
+    apdict = mpf.make_addplot(initial_data[[var1_dropdown.value]],secondary_y = SEC_AXIS1.value)
+    apdict1 = mpf.make_addplot(initial_data[[var2_dropdown.value]],secondary_y = SEC_AXIS2.value, color='green', linestyle='dashed')
+    apdict2 = mpf.make_addplot(initial_data[[var3_dropdown.value]],secondary_y = SEC_AXIS3.value, color='red', linestyle='dotted')
+    apdict3 = mpf.make_addplot(initial_data[[var4_dropdown.value]],secondary_y = SEC_AXIS4.value, color='blue', linestyle='solid')
+    
+    lst = []
+    if var1_dropdown.value != "NONE":
+        lst.extend([apdict])
+    if var2_dropdown.value != "NONE":
+        lst.extend([apdict1])
+    if var3_dropdown.value != "NONE":
+        lst.extend([apdict2])
+    if var4_dropdown.value != "NONE":
+        lst.extend([apdict3])
+        
+    
+    mpf.plot(initial_data.set_index('Date'), addplot= lst,
+             type='candle',
+             style='charles',
+             title=f'Candlestick Chart for {script_dropdown.value}, Date: {date_picker.value}',
+             figsize=(12, 8) ,
+             volume=False,
+             ylabel_lower='Shares\nTraded')
+  
+    return
+
+script_dropdown.observe(on_change)
+date_picker.observe(on_change)
+var1_dropdown.observe(on_change)
+var2_dropdown.observe(on_change)
+var3_dropdown.observe(on_change)
+var4_dropdown.observe(on_change)
+SEC_AXIS1.observe(on_change)
+SEC_AXIS2.observe(on_change)
+SEC_AXIS3.observe(on_change)
+SEC_AXIS4.observe(on_change)
